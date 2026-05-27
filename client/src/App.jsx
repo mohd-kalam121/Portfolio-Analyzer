@@ -6,6 +6,9 @@ function App() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [saveMessage, setSaveMessage] = useState(null);
 
+  const [savedPortfolios, setSavedPortfolios] = useState([]);
+  
+
   const [ticker1, setTicker1] = useState("NVDA");
   const [weight1, setWeight1] = useState("0.60");
   
@@ -59,6 +62,22 @@ function App() {
       setSaveMessage(data.message);
     } catch (error) {
       setSaveMessage("Error saving to database.");
+    }
+  };
+
+  const fetchSavedPortfolios = async () => {
+    setErrorMessage(null);
+    try {
+      const response = await fetch('http://localhost:3000/api/portfolios');
+      const data = await response.json();
+      
+      if (response.ok) {
+        setSavedPortfolios(data.data);
+      } else {
+        setErrorMessage(data.message || "Failed to fetch portfolios.");
+      }
+    } catch (error) {
+      setErrorMessage("Error connecting to backend to fetch data.");
     }
   };
 
@@ -145,6 +164,38 @@ function App() {
             )}
           </div>
 
+        </div>
+      )}
+
+      <hr style={{ margin: '40px 0' }} />
+      
+      <h2>Database Records</h2>
+      <button onClick={fetchSavedPortfolios} style={{ marginBottom: '20px' }}>
+        Load Saved Portfolios
+      </button>
+
+      {savedPortfolios.length > 0 && (
+        <div>
+          {savedPortfolios.map((portfolio) => (
+            <div 
+              key={portfolio.id} 
+              style={{ 
+                border: '1px solid #ccc', 
+                padding: '15px', 
+                marginBottom: '15px', 
+                borderRadius: '8px',
+                backgroundColor: '#f9f9f9'
+              }}
+            >
+              <h3 style={{ margin: '0 0 10px 0' }}>{portfolio.name}</h3>
+              <p style={{ margin: '5px 0' }}><strong>Assets:</strong> {portfolio.assets.join(', ')}</p>
+              <p style={{ margin: '5px 0' }}><strong>Weights:</strong> {portfolio.weights.join(', ')}</p>
+              <p style={{ margin: '5px 0' }}><strong>Expected Return:</strong> {portfolio.expected_return}</p>
+              <p style={{ fontSize: '0.8em', color: '#666', marginTop: '10px' }}>
+                Saved on: {new Date(portfolio.created_at).toLocaleString()}
+              </p>
+            </div>
+          ))}
         </div>
       )}
     </div>

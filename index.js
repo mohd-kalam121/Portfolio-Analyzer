@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -7,7 +8,7 @@ const PORT = 3000;
 
 // --- DATABASE CONNECTION ---
 const pool = new Pool({
-    connectionString: 'postgresql://neondb_owner:npg_PbpcqKmFWM90@ep-gentle-voice-apdetde6-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require', 
+    connectionString: process.env.DATABASE_URL, 
     ssl: { rejectUnauthorized: false }
 });
 
@@ -97,6 +98,19 @@ app.post('/api/save', async (req, res) => {
         res.status(500).json({ status: "error", message: "Failed to save to database." });
     }
 });
+
+app.get('/api/portfolios', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM saved_portfolios ORDER BY created_at DESC'
+        );
+        res.json({ status: "success", data: result.rows });
+    } catch (error) {
+        console.error("Database fetch error:", error);
+        res.status(500).json({ status: "error", message: "Failed to fetch saved portfolios." });
+    }
+});
+
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
