@@ -23,7 +23,7 @@ function App() {
     setSaveMessage(null);
 
     try {
-      const response = await fetch('http://localhost:3000/api/portfolio', {
+      const response = await fetch('https://portfolio-analyzer-api-9g75.onrender.com.', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -47,7 +47,7 @@ function App() {
   // NEW FUNCTION: Sends the data to our new Postgres route
   const savePortfolioToDB = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/save', {
+      const response = await fetch('https://portfolio-analyzer-api-9g75.onrender.com.', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -68,7 +68,7 @@ function App() {
   const fetchSavedPortfolios = async () => {
     setErrorMessage(null);
     try {
-      const response = await fetch('http://localhost:3000/api/portfolios');
+      const response = await fetch('https://portfolio-analyzer-api-9g75.onrender.com.');
       const data = await response.json();
       
       if (response.ok) {
