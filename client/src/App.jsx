@@ -3,6 +3,10 @@ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recha
 import { LayoutDashboard, LineChart, Save, Database, Calculator, TrendingUp, Loader2 } from 'lucide-react';
 
 function App() {
+  // --- PRODUCTION API ROUTE ---
+  // Hardcoding the production Render URL to guarantee the connection works on Vercel
+  const API_BASE = 'https://portfolio-analyzer-api-9g75.onrender.com';
+
   // --- NAVIGATION STATE ---
   const [activeTab, setActiveTab] = useState('portfolio');
 
@@ -12,6 +16,7 @@ function App() {
   const [saveMessage, setSaveMessage] = useState(null);
   const [savedPortfolios, setSavedPortfolios] = useState([]);
   
+  const [portfolioName, setPortfolioName] = useState("");
   const [ticker1, setTicker1] = useState("NVDA");
   const [weight1, setWeight1] = useState("0.60");
   const [ticker2, setTicker2] = useState("MSFT");
@@ -39,7 +44,7 @@ function App() {
     setIsFetchingPortfolio(true); // Turn spinner ON
 
     try {
-      const response = await fetch('http://localhost:3000/api/portfolio', {
+      const response = await fetch(`${API_BASE}/api/portfolio`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -58,26 +63,36 @@ function App() {
   };
 
   const savePortfolioToDB = async () => {
+    if (!portfolioName.trim()) {
+      setSaveMessage("❌ Please enter a name for your portfolio.");
+      return;
+    }
+
     try {
-      const response = await fetch('http://localhost:3000/api/save', {
+      const response = await fetch(`${API_BASE}/api/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: "My Tech Portfolio",
+          name: portfolioName,
           assets: portfolioData.assets,
           weights: portfolioData.weights,
           expected_portfolio_return: portfolioData.expected_portfolio_return
         })
       });
       const data = await response.json();
-      setSaveMessage(data.message);
+      if (response.ok) {
+        setSaveMessage("✅ Portfolio permanently saved!");
+        setPortfolioName(""); // Clear input on success
+      } else {
+        setSaveMessage(data.message || "Failed to save.");
+      }
     } catch (error) { setSaveMessage("Error saving to database."); }
   };
 
   const fetchSavedPortfolios = async () => {
     setErrorMessage(null);
     try {
-      const response = await fetch('http://localhost:3000/api/portfolios');
+      const response = await fetch(`${API_BASE}/api/portfolios`);
       const data = await response.json();
       if (response.ok) setSavedPortfolios(data.data);
       else setErrorMessage(data.message || "Failed to fetch portfolios.");
@@ -92,7 +107,7 @@ function App() {
   const calculateOption = async () => {
     setIsCalculating(true);
     try {
-      const response = await fetch('http://localhost:3000/api/options/crr', {
+      const response = await fetch(`${API_BASE}/api/options/crr`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -197,11 +212,19 @@ function App() {
                       </PieChart>
                     </ResponsiveContainer>
                    </div>
-                   <div className="flex flex-col gap-3 min-w-[150px]">
+                   <div className="flex flex-col gap-3 min-w-[200px]">
+                      {/* NEW PORTFOLIO NAMING INPUT */}
+                      <input 
+                        type="text"
+                        placeholder="Name your config..."
+                        value={portfolioName}
+                        onChange={(e) => setPortfolioName(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
                       <button onClick={savePortfolioToDB} className="flex items-center justify-center gap-2 w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors">
                         <Save size={18} /> Save Config
                       </button>
-                      {saveMessage && <p className="text-sm font-medium text-emerald-600 text-center">{saveMessage}</p>}
+                      {saveMessage && <p className={`text-sm font-medium text-center ${saveMessage.includes('❌') ? 'text-red-600' : 'text-emerald-600'}`}>{saveMessage}</p>}
                    </div>
                 </div>
               </div>
