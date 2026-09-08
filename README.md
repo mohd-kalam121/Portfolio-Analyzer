@@ -9,7 +9,7 @@ Cox-Ross-Rubinstein binomial lattice.
 
 [![CI](https://github.com/mohd-kalam121/Portfolio-Analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/mohd-kalam121/Portfolio-Analyzer/actions/workflows/ci.yml)
 ![Node](https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-112%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-113%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-ISC-blue)
 
 **Live demo:** [portfolio-analyzer-three.vercel.app](https://portfolio-analyzer-three.vercel.app/) ·
@@ -158,6 +158,16 @@ to parse presentation back into data and made the values unusable for charting,
 sorting or storage. Metrics are now numbers; formatted strings are provided
 alongside as a convenience, never as a replacement.
 
+### Deploying the API and client independently
+
+The two halves live in one repository but deploy to different platforms, so
+during a rollout the previous client is briefly talking to the new API. Rather
+than accept a window where the live page blanks its headline figure, the new
+response carries the two legacy field names the old client reads alongside the
+new shape — expand now, contract once the client has shipped. The compatibility
+fields are marked deprecated in `portfolioService.js` and covered by a test that
+asserts they agree with the numeric metrics they mirror.
+
 ### Saved records are recomputed, not trusted
 
 `POST /api/save` accepts only the allocation. The server recomputes the metrics
@@ -298,7 +308,7 @@ Every error has the same shape, with a stable machine-readable `code`:
 ## Testing
 
 ```bash
-npm test              # 112 tests
+npm test              # 113 tests
 npm run test:coverage
 ```
 
