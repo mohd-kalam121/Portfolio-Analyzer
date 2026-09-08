@@ -25,7 +25,13 @@ class TtlCache {
         this.clock = clock;
         this.store = new Map();
         this.inFlight = new Map();
-        this.stats = { hits: 0, misses: 0, evictions: 0, coalesced: 0 };
+
+        // `misses` counts lookups that found nothing; `upstreamCalls` counts the
+        // times the producer actually ran. They are different numbers, and the
+        // gap between them is the whole point of this cache: 25 concurrent
+        // requests for two uncached tickers produce 50 misses but only 2
+        // upstream calls, the other 48 being coalesced onto those two.
+        this.stats = { hits: 0, misses: 0, upstreamCalls: 0, coalesced: 0, evictions: 0 };
     }
 
     get(key) {
@@ -71,6 +77,8 @@ class TtlCache {
             return pending;
         }
 
+        this.stats.upstreamCalls += 1;
+
         const promise = (async () => producer())()
             .then(value => {
                 this.set(key, value);
@@ -93,13 +101,22 @@ class TtlCache {
         return this.store.size;
     }
 
-    /** Hit rate is the headline number worth logging or exposing on /health. */
+    /**
+     * Cache effectiveness, for logging or a readiness endpoint.
+     *
+     * `hitRate` is the share of lookups served from the store. `deduplication`
+     * is the share of misses that avoided an upstream call by joining one
+     * already in flight - the number that shows single-flight working, which a
+     * hit rate alone does not reveal.
+     */
     snapshot() {
-        const total = this.stats.hits + this.stats.misses;
+        const lookups = this.stats.hits + this.stats.misses;
+        const { misses, coalesced } = this.stats;
         return {
             ...this.stats,
             size: this.store.size,
-            hitRate: total === 0 ? 0 : Number((this.stats.hits / total).toFixed(4))
+            hitRate: lookups === 0 ? 0 : Number((this.stats.hits / lookups).toFixed(4)),
+            deduplication: misses === 0 ? 0 : Number((coalesced / misses).toFixed(4))
         };
     }
 }

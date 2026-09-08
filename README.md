@@ -9,7 +9,7 @@ Cox-Ross-Rubinstein binomial lattice.
 
 [![CI](https://github.com/mohd-kalam121/Portfolio-Analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/mohd-kalam121/Portfolio-Analyzer/actions/workflows/ci.yml)
 ![Node](https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-113%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-115%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-ISC-blue)
 
 **Live demo:** [portfolio-analyzer-three.vercel.app](https://portfolio-analyzer-three.vercel.app/) ·
@@ -123,8 +123,24 @@ cached path is roughly 490x faster and makes zero upstream calls.
 **Single-flight de-duplication.** When N concurrent requests miss on the same
 ticker, only the first performs the fetch; the rest await the same promise.
 Without this, a cold cache plus a burst of traffic produces a thundering herd
-against precisely the dependency you are trying to protect. The cache tracks how
-many calls it coalesced, and `/ready` reports it.
+against precisely the dependency you are trying to protect.
+
+Measured with 25 concurrent requests for a two-asset portfolio on a cold cache,
+as reported by `/ready`:
+
+```jsonc
+{
+  "hits": 0,
+  "misses": 50,          // every lookup missed
+  "upstreamCalls": 2,    // but only one fetch per ticker actually happened
+  "coalesced": 48,       // the rest joined a request already in flight
+  "deduplication": 0.96
+}
+```
+
+`misses` and `upstreamCalls` are deliberately separate counters. A hit rate
+alone cannot show this: every one of those 50 lookups was a miss, and the cache
+still made only two calls.
 
 **Per-attempt timeout.** An `AbortController` caps every request, so a hung
 upstream cannot pin a handler open indefinitely.
@@ -308,7 +324,7 @@ Every error has the same shape, with a stable machine-readable `code`:
 ## Testing
 
 ```bash
-npm test              # 113 tests
+npm test              # 115 tests
 npm run test:coverage
 ```
 
